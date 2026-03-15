@@ -1,18 +1,16 @@
-run = "bash start.sh"
-entrypoint = "start.sh"
+run = "cd frontend && npm install && npx vite --host 0.0.0.0 --port 3000"
+entrypoint = "frontend/src/App.tsx"
 
 [nix]
 channel = "stable-23_11"
 
-[deployment]
-run = ["bash", "start.sh"]
+[languages]
+[languages.typescript]
+pattern = "**/{*.ts,*.tsx}"
+[languages.typescript.languageServer]
+start = "typescript-language-server --stdio"
 
 [[ports]]
-localPort = 5173
+localPort = 3000
 externalPort = 80
-exposeLocalhost = true
-
-[[ports]]
-localPort = 8000
-externalPort = 8000
 exposeLocalhost = true

@@ -11,5 +11,14 @@ export default defineConfig({
     hmr: {
       clientPort: 443,
     },
+    proxy: {
+      '/auth': 'http://localhost:8000',
+      '/deals': 'http://localhost:8000',
+      '/itinerary': 'http://localhost:8000',
+      '/alerts': 'http://localhost:8000',
+      '/calendar': 'http://localhost:8000',
+      '/wallet': 'http://localhost:8000',
+      '/health': 'http://localhost:8000',
+    },
   },
 })

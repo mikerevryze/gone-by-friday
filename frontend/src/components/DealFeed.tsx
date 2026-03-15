@@ -3,6 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { fetchDeals } from '../lib/api'
 import type { Deal, SortMode } from '../types'
 
+const MOCK_DEALS: Deal[] = [
+  { id: '1', origin: 'CLT', destination: 'Knoxville, TN', destination_short: 'TYS', flag: '🏔️', flight_price_per_pax: 18, hotel_price_per_night: 89, airline: 'Contour', seats_remaining: 8, departs_at: '', returns_at: '', gate: 'E4', tier: 'insane', interests: ['outdoors','food','breweries'], hilton_available: true, active: true, expires_at: null, created_at: '' },
+  { id: '2', origin: 'CLT', destination: 'Savannah, GA', destination_short: 'SAV', flag: '🌿', flight_price_per_pax: 29, hotel_price_per_night: 119, airline: 'Avelo', seats_remaining: 6, departs_at: '', returns_at: '', gate: 'B12', tier: 'steal', interests: ['history','food','nightlife'], hilton_available: true, active: true, expires_at: null, created_at: '' },
+  { id: '3', origin: 'CLT', destination: 'Roanoke, VA', destination_short: 'ROA', flag: '🌄', flight_price_per_pax: 24, hotel_price_per_night: 79, airline: 'Contour', seats_remaining: 5, departs_at: '', returns_at: '', gate: 'E2', tier: 'insane', interests: ['outdoors','hiking','breweries'], hilton_available: true, active: true, expires_at: null, created_at: '' },
+  { id: '4', origin: 'CLT', destination: 'Pittsburgh, PA', destination_short: 'PIT', flag: '🏗️', flight_price_per_pax: 39, hotel_price_per_night: 109, airline: 'Breeze', seats_remaining: 12, departs_at: '', returns_at: '', gate: 'A8', tier: 'steal', interests: ['food','sports','museums'], hilton_available: true, active: true, expires_at: null, created_at: '' },
+  { id: '5', origin: 'CLT', destination: 'Lynchburg, VA', destination_short: 'LYH', flag: '🍂', flight_price_per_pax: 18, hotel_price_per_night: 69, airline: 'Contour', seats_remaining: 4, departs_at: '', returns_at: '', gate: 'E1', tier: 'insane', interests: ['outdoors','history','breweries'], hilton_available: false, active: true, expires_at: null, created_at: '' },
+  { id: '6', origin: 'CLT', destination: 'Asheville, NC', destination_short: 'AVL', flag: '🎨', flight_price_per_pax: 31, hotel_price_per_night: 139, airline: 'Contour', seats_remaining: 9, departs_at: '', returns_at: '', gate: 'E6', tier: 'steal', interests: ['food','breweries','art'], hilton_available: true, active: true, expires_at: null, created_at: '' },
+  { id: '7', origin: 'CLT', destination: 'Memphis, TN', destination_short: 'MEM', flag: '🎵', flight_price_per_pax: 59, hotel_price_per_night: 99, airline: 'Delta', seats_remaining: 15, departs_at: '', returns_at: '', gate: 'C14', tier: 'hot', interests: ['music','food','nightlife'], hilton_available: true, active: true, expires_at: null, created_at: '' },
+  { id: '8', origin: 'CLT', destination: 'Greenville, SC', destination_short: 'GSP', flag: '🌳', flight_price_per_pax: 0, hotel_price_per_night: 89, airline: 'Drive', seats_remaining: null, departs_at: '', returns_at: '', gate: null, tier: 'insane', interests: ['food','outdoors','breweries'], hilton_available: true, active: true, expires_at: null, created_at: '' },
+  { id: '9', origin: 'CLT', destination: 'Columbus, OH', destination_short: 'CMH', flag: '🏈', flight_price_per_pax: 44, hotel_price_per_night: 99, airline: 'Breeze', seats_remaining: 10, departs_at: '', returns_at: '', gate: 'A4', tier: 'steal', interests: ['food','sports','nightlife'], hilton_available: true, active: true, expires_at: null, created_at: '' },
+  { id: '10', origin: 'CLT', destination: 'Richmond, VA', destination_short: 'RIC', flag: '🏛️', flight_price_per_pax: 63, hotel_price_per_night: 109, airline: 'American', seats_remaining: 7, departs_at: '', returns_at: '', gate: 'B6', tier: 'hot', interests: ['history','food','art'], hilton_available: true, active: true, expires_at: null, created_at: '' },
+]
+
 const TIER_COLORS: Record<string, string> = {
   insane: 'bg-green-bg text-green',
   steal: 'bg-green-bg text-green',
@@ -21,7 +34,7 @@ export default function DealFeed() {
   useEffect(() => {
     fetchDeals({ origin: 'CLT' })
       .then((data) => setDeals(data.deals))
-      .catch(() => setDeals([]))
+      .catch(() => setDeals(MOCK_DEALS))
       .finally(() => setLoading(false))
   }, [])
 

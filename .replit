@@ -1,4 +1,4 @@
-run = "cd frontend && npm install && npx vite --host 0.0.0.0 --port 3000"
+run = "cd frontend && npm install && npx vite --host 0.0.0.0 --port 5000"
 entrypoint = "frontend/src/App.tsx"
 
 [nix]
@@ -11,6 +11,6 @@ pattern = "**/{*.ts,*.tsx}"
 start = "typescript-language-server --stdio"
 
 [[ports]]
-localPort = 3000
+localPort = 5000
 externalPort = 80
 exposeLocalhost = true

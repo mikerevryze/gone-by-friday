@@ -53,7 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ email, password }),
     })
     if (!res.ok) {
-      const err = await res.json()
+      const text = await res.text()
+      const err = text ? JSON.parse(text) : {}
       throw new Error(err.detail || 'Login failed')
     }
     const data = await res.json()
@@ -69,7 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ email, password, home_airport: airport }),
     })
     if (!res.ok) {
-      const err = await res.json()
+      const text = await res.text()
+      const err = text ? JSON.parse(text) : {}
       throw new Error(err.detail || 'Signup failed')
     }
     const data = await res.json()

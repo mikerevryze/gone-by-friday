@@ -32,6 +32,13 @@ export async function fetchDeal(dealId: string) {
   return request<any>(`/deals/${dealId}`)
 }
 
+export async function scanDeals(origin: string = 'CLT') {
+  return request<{ status: string; source: string; deals_found: number; message?: string }>(
+    `/deals/scan?origin=${origin}`,
+    { method: 'POST' }
+  )
+}
+
 export async function generateItinerary(dealId: string, pax: number, interests: string[]) {
   return request<{ itinerary: any; trip_id: string; deal: any }>('/itinerary/generate', {
     method: 'POST',

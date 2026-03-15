@@ -1,8 +1,16 @@
 from fastapi import APIRouter
 from typing import Optional
 from backend.db.memory_store import get_deals, get_deal_by_id, get_hilton_for_destination
+from backend.services.deal_scanner import scan_deals
 
 router = APIRouter(prefix="/deals", tags=["deals"])
+
+
+@router.post("/scan")
+async def scan(origin: str = "CLT"):
+    """Scan for fresh deals from airlines. Uses Amadeus API if configured."""
+    result = await scan_deals(origin)
+    return result
 
 
 @router.get("")

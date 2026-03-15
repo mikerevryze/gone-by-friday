@@ -1,20 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchDeals } from '../lib/api'
+import { fetchDeals, scanDeals } from '../lib/api'
 import type { Deal, SortMode } from '../types'
-
-const MOCK_DEALS: Deal[] = [
-  { id: '1', origin: 'CLT', destination: 'Knoxville, TN', destination_short: 'TYS', flag: '🏔️', flight_price_per_pax: 18, hotel_price_per_night: 89, airline: 'Contour', seats_remaining: 8, departs_at: '', returns_at: '', gate: 'E4', tier: 'insane', interests: ['outdoors','food','breweries'], hilton_available: true, active: true, expires_at: null, created_at: '' },
-  { id: '2', origin: 'CLT', destination: 'Savannah, GA', destination_short: 'SAV', flag: '🌿', flight_price_per_pax: 29, hotel_price_per_night: 119, airline: 'Avelo', seats_remaining: 6, departs_at: '', returns_at: '', gate: 'B12', tier: 'steal', interests: ['history','food','nightlife'], hilton_available: true, active: true, expires_at: null, created_at: '' },
-  { id: '3', origin: 'CLT', destination: 'Roanoke, VA', destination_short: 'ROA', flag: '🌄', flight_price_per_pax: 24, hotel_price_per_night: 79, airline: 'Contour', seats_remaining: 5, departs_at: '', returns_at: '', gate: 'E2', tier: 'insane', interests: ['outdoors','hiking','breweries'], hilton_available: true, active: true, expires_at: null, created_at: '' },
-  { id: '4', origin: 'CLT', destination: 'Pittsburgh, PA', destination_short: 'PIT', flag: '🏗️', flight_price_per_pax: 39, hotel_price_per_night: 109, airline: 'Breeze', seats_remaining: 12, departs_at: '', returns_at: '', gate: 'A8', tier: 'steal', interests: ['food','sports','museums'], hilton_available: true, active: true, expires_at: null, created_at: '' },
-  { id: '5', origin: 'CLT', destination: 'Lynchburg, VA', destination_short: 'LYH', flag: '🍂', flight_price_per_pax: 18, hotel_price_per_night: 69, airline: 'Contour', seats_remaining: 4, departs_at: '', returns_at: '', gate: 'E1', tier: 'insane', interests: ['outdoors','history','breweries'], hilton_available: false, active: true, expires_at: null, created_at: '' },
-  { id: '6', origin: 'CLT', destination: 'Asheville, NC', destination_short: 'AVL', flag: '🎨', flight_price_per_pax: 31, hotel_price_per_night: 139, airline: 'Contour', seats_remaining: 9, departs_at: '', returns_at: '', gate: 'E6', tier: 'steal', interests: ['food','breweries','art'], hilton_available: true, active: true, expires_at: null, created_at: '' },
-  { id: '7', origin: 'CLT', destination: 'Memphis, TN', destination_short: 'MEM', flag: '🎵', flight_price_per_pax: 59, hotel_price_per_night: 99, airline: 'Delta', seats_remaining: 15, departs_at: '', returns_at: '', gate: 'C14', tier: 'hot', interests: ['music','food','nightlife'], hilton_available: true, active: true, expires_at: null, created_at: '' },
-  { id: '8', origin: 'CLT', destination: 'Greenville, SC', destination_short: 'GSP', flag: '🌳', flight_price_per_pax: 0, hotel_price_per_night: 89, airline: 'Drive', seats_remaining: null, departs_at: '', returns_at: '', gate: null, tier: 'insane', interests: ['food','outdoors','breweries'], hilton_available: true, active: true, expires_at: null, created_at: '' },
-  { id: '9', origin: 'CLT', destination: 'Columbus, OH', destination_short: 'CMH', flag: '🏈', flight_price_per_pax: 44, hotel_price_per_night: 99, airline: 'Breeze', seats_remaining: 10, departs_at: '', returns_at: '', gate: 'A4', tier: 'steal', interests: ['food','sports','nightlife'], hilton_available: true, active: true, expires_at: null, created_at: '' },
-  { id: '10', origin: 'CLT', destination: 'Richmond, VA', destination_short: 'RIC', flag: '🏛️', flight_price_per_pax: 63, hotel_price_per_night: 109, airline: 'American', seats_remaining: 7, departs_at: '', returns_at: '', gate: 'B6', tier: 'hot', interests: ['history','food','art'], hilton_available: true, active: true, expires_at: null, created_at: '' },
-]
 
 const TIER_COLORS: Record<string, string> = {
   insane: 'bg-green-bg text-green',
@@ -30,19 +17,52 @@ export default function DealFeed() {
   const [sort, setSort] = useState<SortMode>('best')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [scanning, setScanning] = useState(false)
+  const [scanResult, setScanResult] = useState<string | null>(null)
+
+  const loadDeals = async () => {
+    try {
+      const data = await fetchDeals({ origin: 'CLT' })
+      setDeals(data.deals)
+    } catch {
+      setDeals([])
+    }
+    setLoading(false)
+  }
+
+  const handleScan = async () => {
+    setScanning(true)
+    setScanResult(null)
+    try {
+      const result = await scanDeals('CLT')
+      if (result.deals_found > 0) {
+        setScanResult(`Found ${result.deals_found} deals via ${result.source}`)
+        await loadDeals()
+      } else {
+        setScanResult(result.message || 'No new deals found')
+      }
+    } catch {
+      setScanResult('Scan failed — using cached deals')
+    }
+    setScanning(false)
+  }
 
   useEffect(() => {
-    fetchDeals({ origin: 'CLT' })
-      .then((data) => setDeals(data.deals))
-      .catch(() => setDeals(MOCK_DEALS))
-      .finally(() => setLoading(false))
+    // Try to scan for fresh deals on first load, then load whatever we have
+    scanDeals('CLT')
+      .then(async (result) => {
+        if (result.deals_found > 0) {
+          setScanResult(`Found ${result.deals_found} fresh deals`)
+        }
+        await loadDeals()
+      })
+      .catch(() => loadDeals())
   }, [])
 
   const sorted = [...deals].sort((a, b) => {
     if (sort === 'price') return a.flight_price_per_pax - b.flight_price_per_pax
     if (sort === 'seats')
       return (a.seats_remaining ?? 99) - (b.seats_remaining ?? 99)
-    // 'best' — tier order
     const order: Record<string, number> = { insane: 0, steal: 1, hot: 2, watch: 3, gone: 4 }
     return (order[a.tier] ?? 3) - (order[b.tier] ?? 3)
   })
@@ -55,8 +75,23 @@ export default function DealFeed() {
           <h1 className="font-serif text-2xl">Weekend Deals</h1>
           <p className="text-sub text-sm mt-0.5">From CLT · This Friday</p>
         </div>
-        <span className="text-xs text-sub">{deals.length} deals</span>
+        <button
+          onClick={handleScan}
+          disabled={scanning}
+          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+            scanning ? 'bg-faint text-sub' : 'bg-green-bg text-green'
+          }`}
+        >
+          {scanning ? 'Scanning...' : 'Scan flights'}
+        </button>
       </div>
+
+      {/* Scan result banner */}
+      {scanResult && (
+        <div className="mx-5 mt-2 px-3 py-2 rounded-xl bg-faint text-xs text-sub">
+          {scanResult}
+        </div>
+      )}
 
       {/* Sort */}
       <div className="px-5 py-3 flex gap-2">
@@ -71,11 +106,22 @@ export default function DealFeed() {
             {s}
           </button>
         ))}
+        <span className="ml-auto text-xs text-sub self-center">{deals.length} deals</span>
       </div>
 
       {/* Deal cards */}
       {loading ? (
         <div className="px-5 py-12 text-center text-sub">Loading deals...</div>
+      ) : sorted.length === 0 ? (
+        <div className="px-5 py-12 text-center">
+          <p className="text-sub">No deals found</p>
+          <button
+            onClick={handleScan}
+            className="mt-3 px-4 py-2 rounded-xl bg-text text-white text-sm font-semibold"
+          >
+            Scan for deals
+          </button>
+        </div>
       ) : (
         <div className="px-5 space-y-3">
           {sorted.map((deal) => {
@@ -87,9 +133,7 @@ export default function DealFeed() {
               >
                 {/* Card header */}
                 <button
-                  onClick={() =>
-                    setExpanded(isExpanded ? null : deal.id)
-                  }
+                  onClick={() => setExpanded(isExpanded ? null : deal.id)}
                   className="w-full p-4 flex items-center gap-3 text-left"
                 >
                   <span className="text-2xl">{deal.flag}</span>
@@ -113,7 +157,9 @@ export default function DealFeed() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-serif text-2xl">${deal.flight_price_per_pax}</div>
+                    <div className="font-serif text-2xl">
+                      {deal.flight_price_per_pax === 0 ? 'Free' : `$${deal.flight_price_per_pax}`}
+                    </div>
                     <div className="text-[10px] text-sub">/person</div>
                   </div>
                 </button>
@@ -125,7 +171,7 @@ export default function DealFeed() {
                       <div>
                         <div className="text-xs text-sub">Flight</div>
                         <div className="font-serif text-lg">
-                          ${deal.flight_price_per_pax}
+                          {deal.flight_price_per_pax === 0 ? 'Drive' : `$${deal.flight_price_per_pax}`}
                         </div>
                       </div>
                       <div>
@@ -137,9 +183,7 @@ export default function DealFeed() {
                       <div>
                         <div className="text-xs text-sub">Total (2 nights)</div>
                         <div className="font-serif text-lg">
-                          $
-                          {deal.flight_price_per_pax +
-                            deal.hotel_price_per_night * 2}
+                          ${deal.flight_price_per_pax + deal.hotel_price_per_night * 2}
                         </div>
                       </div>
                     </div>
@@ -150,12 +194,11 @@ export default function DealFeed() {
                       </div>
                     )}
 
-                    {deal.seats_remaining !== null &&
-                      deal.seats_remaining <= 4 && (
-                        <div className="bg-amber-bg text-amber text-xs font-medium px-3 py-1.5 rounded-full inline-block">
-                          {deal.seats_remaining} seats left
-                        </div>
-                      )}
+                    {deal.seats_remaining !== null && deal.seats_remaining <= 4 && (
+                      <div className="bg-amber-bg text-amber text-xs font-medium px-3 py-1.5 rounded-full inline-block">
+                        {deal.seats_remaining} seats left
+                      </div>
+                    )}
 
                     <button
                       onClick={() => navigate(`/build/${deal.id}`)}

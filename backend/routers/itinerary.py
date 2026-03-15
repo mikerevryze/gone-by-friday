@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.db.supabase_client import get_supabase
+from backend.db.memory_store import get_deal_by_id, save_trip
 from backend.models.schemas import ItineraryRequest
 from backend.services.itinerary_generator import generate_itinerary
 
@@ -8,12 +8,7 @@ router = APIRouter(prefix="/itinerary", tags=["itinerary"])
 
 @router.post("/generate")
 async def generate(req: ItineraryRequest):
-    sb = get_supabase()
-
-    # Fetch the deal
-    deal_result = sb.table("deals").select("*").eq("id", req.deal_id).single().execute()
-    deal = deal_result.data
-
+    deal = get_deal_by_id(req.deal_id)
     if not deal:
         return {"error": "Deal not found"}
 
@@ -26,20 +21,21 @@ async def generate(req: ItineraryRequest):
         flight_price=deal["flight_price_per_pax"],
     )
 
-    # Cache in trips table (create a new trip record)
-    trip_data = {
+    # Save trip
+    trip = save_trip({
         "deal_id": req.deal_id,
         "itinerary": itinerary,
         "status": "planned",
         "total_cash_cost": (deal["flight_price_per_pax"] * req.pax) + (deal["hotel_price_per_night"] * 2),
-    }
-
-    # Only add user_id if we have auth context (skip for anonymous)
-    trip_result = sb.table("trips").insert(trip_data).execute()
-    trip = trip_result.data[0] if trip_result.data else None
+        "selections": None,
+        "hotel_mode": None,
+        "calendar_synced": False,
+        "total_points_used": None,
+        "user_id": None,
+    })
 
     return {
         "itinerary": itinerary,
-        "trip_id": trip["id"] if trip else None,
+        "trip_id": trip["id"],
         "deal": deal,
     }

@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from typing import Optional
-from backend.db.supabase_client import get_supabase
-from backend.services.deal_scorer import score_deal
+from backend.db.memory_store import get_deals, get_deal_by_id, get_hilton_for_destination
 
 router = APIRouter(prefix="/deals", tags=["deals"])
 
@@ -16,13 +15,9 @@ async def list_deals(
     airlines: Optional[str] = None,
     points_first: bool = True,
 ):
-    sb = get_supabase()
-    query = sb.table("deals").select("*").eq("active", True).eq("origin", origin)
+    deals = get_deals(origin=origin)
 
-    result = query.execute()
-    deals = result.data or []
-
-    # Filter by budget (flight + hotel * 2 nights per pax)
+    # Filter by budget
     filtered = []
     for d in deals:
         total = (d["flight_price_per_pax"] * pax) + (d["hotel_price_per_night"] * 2)
@@ -66,20 +61,10 @@ async def list_deals(
 
 @router.get("/{deal_id}")
 async def get_deal(deal_id: str):
-    sb = get_supabase()
-    deal_result = sb.table("deals").select("*").eq("id", deal_id).single().execute()
-    deal = deal_result.data
-
+    deal = get_deal_by_id(deal_id)
     if not deal:
-        return {"error": "Deal not found"}, 404
+        return {"error": "Deal not found"}
 
-    # Join hilton properties
-    hilton_result = (
-        sb.table("hilton_properties")
-        .select("*")
-        .eq("destination", deal["destination"])
-        .execute()
-    )
-    deal["hilton_properties"] = hilton_result.data or []
-
+    deal = {**deal}
+    deal["hilton_properties"] = get_hilton_for_destination(deal["destination"])
     return deal

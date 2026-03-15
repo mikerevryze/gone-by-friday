@@ -18,8 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from backend.routers import deals, itinerary, alerts, calendar, wallet
+from backend.routers import auth, deals, itinerary, alerts, calendar, wallet
 
+app.include_router(auth.router)
 app.include_router(deals.router)
 app.include_router(itinerary.router)
 app.include_router(alerts.router)

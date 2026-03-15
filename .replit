@@ -1,0 +1,17 @@
+run = "bash start.sh"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["bash", "start.sh"]
+
+[[ports]]
+localPort = 5173
+externalPort = 80
+exposeLocalhost = true
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
+exposeLocalhost = true
